@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configure project
         run: cmake -S . -B build -A x64
@@ -21,7 +21,7 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Upload plugin
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: AudioArts4100-Windows-VST3
           path: build/AudioArts4100_artefacts/Release/VST3/AudioArts 4100.vst3
