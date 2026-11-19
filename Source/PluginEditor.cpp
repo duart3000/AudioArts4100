@@ -39,11 +39,11 @@ AudioArts4100AudioProcessorEditor::AudioArts4100AudioProcessorEditor (AudioArts4
             slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 82, 20);
             if (j == 0)
             {
-                slider.setTextFromValueFunction ([this, i](double v)
+                slider.textFromValueFunction = [this, i](double v)
                 {
                     const bool x10 = processor.parameters.getRawParameterValue (parameterId (i, "x10"))->load() >= 0.5f;
                     return juce::String (v * (x10 ? 10.0 : 1.0), 0) + " Hz";
-                });
+                };
             }
             else if (j == 1) slider.setTextValueSuffix (" oct");
             else slider.setTextValueSuffix (" dB");
@@ -162,7 +162,10 @@ void AudioArts4100AudioProcessorEditor::RackLookAndFeel::drawRotarySlider (juce:
     g.setColour (cap.darker (0.65f));
     g.drawEllipse (cx - r * 0.78f, cy - r * 0.78f, r * 1.56f, r * 1.56f, 2.0f);
     g.setColour (juce::Colours::white.withAlpha (0.16f));
-    g.drawArc (cx - r * 0.69f, cy - r * 0.69f, r * 1.38f, r * 1.38f, 3.7f, 5.25f, 2.0f);
+    juce::Path highlightArc;
+    highlightArc.addArc (cx - r * 0.69f, cy - r * 0.69f, r * 1.38f, r * 1.38f,
+                         3.7f, 5.25f, true);
+    g.strokePath (highlightArc, juce::PathStrokeType (2.0f));
 
     // Pointer inset into the plastic, plus a small centre boss.
     const float pointerLength = r * 0.56f;
