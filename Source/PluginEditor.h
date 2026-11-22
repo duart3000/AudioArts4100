@@ -40,7 +40,7 @@ private:
 
     static juce::String parameterId (int band, const juce::String& suffix);
     void timerCallback() override;
-    void drawNeedle (juce::Graphics&, const juce::Slider&, float designX, float designY,
+    void drawNeedle (juce::Graphics&, juce::Slider&, float designX, float designY,
                      float designLength, float scaleX, float scaleY) const;
     void drawLed (juce::Graphics&, float designX, float designY, bool on,
                   juce::Colour onColour, float scaleX, float scaleY) const;

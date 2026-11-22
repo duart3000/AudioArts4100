@@ -81,8 +81,8 @@ AudioArts4100AudioProcessorEditor::AudioArts4100AudioProcessorEditor (AudioArts4
             auto& slider = knobs[(size_t) band][(size_t) control];
             slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
             slider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-            slider.setRotaryParameters (juce::MathConstants<float>::degreesToRadians (225.0f),
-                                        juce::MathConstants<float>::degreesToRadians (495.0f), true);
+            slider.setRotaryParameters ((225.0f * juce::MathConstants<float>::pi / 180.0f),
+                                        (495.0f * juce::MathConstants<float>::pi / 180.0f), true);
             slider.setPopupDisplayEnabled (true, false, this);
             slider.setLookAndFeel (&invisibleLook);
             slider.setDoubleClickReturnValue (true, control == 2 ? 0.0 :
@@ -117,8 +117,8 @@ AudioArts4100AudioProcessorEditor::AudioArts4100AudioProcessorEditor (AudioArts4
 
     masterSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     masterSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-    masterSlider.setRotaryParameters (juce::MathConstants<float>::degreesToRadians (225.0f),
-                                      juce::MathConstants<float>::degreesToRadians (495.0f), true);
+    masterSlider.setRotaryParameters ((225.0f * juce::MathConstants<float>::pi / 180.0f),
+                                      (495.0f * juce::MathConstants<float>::pi / 180.0f), true);
     masterSlider.setSkewFactorFromMidPoint (0.0);
     masterSlider.setPopupDisplayEnabled (true, false, this);
     masterSlider.setLookAndFeel (&invisibleLook);
@@ -148,12 +148,12 @@ AudioArts4100AudioProcessorEditor::~AudioArts4100AudioProcessorEditor()
     eqBypassButton.setLookAndFeel (nullptr);
 }
 
-void AudioArts4100AudioProcessorEditor::drawNeedle (juce::Graphics& g, const juce::Slider& slider,
+void AudioArts4100AudioProcessorEditor::drawNeedle (juce::Graphics& g, juce::Slider& slider,
                                                       float designX, float designY, float designLength,
                                                       float scaleX, float scaleY) const
 {
     const float proportion = (float) slider.valueToProportionOfLength (slider.getValue());
-    const float angle = juce::MathConstants<float>::degreesToRadians (-135.0f + proportion * 270.0f);
+    const float angle = ((-135.0f + proportion * 270.0f) * juce::MathConstants<float>::pi / 180.0f);
     const float cx = designX * scaleX;
     const float cy = designY * scaleY;
     const float dx = std::sin (angle) * designLength * scaleX;
