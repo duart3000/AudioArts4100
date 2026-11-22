@@ -36,7 +36,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AudioArts4100AudioProcessor:
         p.push_back (std::make_unique<AudioParameterBool> (id ("bypass"), "Band " + String (i + 1) + " Bypass", false));
     }
     p.push_back (std::make_unique<AudioParameterFloat> ("master", "Master Level",
-        NormalisableRange<float> (-24.0f, 24.0f, 0.01f), 0.0f));
+        NormalisableRange<float> (-60.0f, 16.0f, 0.01f), 0.0f));
     p.push_back (std::make_unique<AudioParameterBool> ("eq_bypass", "EQ Bypass", false));
     return { p.begin(), p.end() };
 }

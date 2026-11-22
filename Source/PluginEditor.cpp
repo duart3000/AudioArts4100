@@ -3,11 +3,14 @@
 namespace
 {
     const std::array<juce::Colour, 4> bandColours {
-        juce::Colour (0xffe33b35), juce::Colour (0xffed842d),
-        juce::Colour (0xffe7c83e), juce::Colour (0xff4eae69)
+        juce::Colour (0xffc92f29), juce::Colour (0xffe87519),
+        juce::Colour (0xffe5bd25), juce::Colour (0xff4caa45)
     };
-    const std::array<juce::String, 4> bandNames { "BAND 1  /  LOW", "BAND 2  /  LOW MID", "BAND 3  /  HIGH MID", "BAND 4  /  HIGH" };
-    const std::array<juce::String, 3> controlNames { "FREQUENCY", "BANDWIDTH", "BOOST / CUT" };
+    const std::array<juce::String, 4> bandNames {
+        "BAND 1  —  LOW FREQUENCY", "BAND 2  —  LOW MID FREQUENCY",
+        "BAND 3  —  HIGH MID FREQUENCY", "BAND 4  —  HIGH FREQUENCY"
+    };
+    const std::array<juce::String, 3> controlNames { "FREQUENCY", "OCTAVES", "dB" };
     juce::String parameterId (int band, const juce::String& suffix)
     {
         return "b" + juce::String (band + 1) + "_" + suffix;
@@ -18,94 +21,83 @@ AudioArts4100AudioProcessorEditor::AudioArts4100AudioProcessorEditor (AudioArts4
     : AudioProcessorEditor (&p), processor (p)
 {
     setLookAndFeel (&lookAndFeel);
-    setSize (980, 650);
+    setSize (1200, 800);
 
-    titleLabel.setText ("AUDIOARTS", juce::dontSendNotification);
-    titleLabel.setFont (juce::Font (juce::FontOptions (27.0f, juce::Font::bold)));
-    titleLabel.setColour (juce::Label::textColourId, juce::Colour (0xffe7e4dc));
+    titleLabel.setText ("AUDIOARTS   |   MODEL 4100", juce::dontSendNotification);
+    titleLabel.setFont (juce::Font (juce::FontOptions (29.0f, juce::Font::bold)));
+    titleLabel.setColour (juce::Label::textColourId, juce::Colour (0xffe7e2d6));
     addAndMakeVisible (titleLabel);
-    subtitleLabel.setText ("MODEL 4100   /   FOUR BAND PARAMETRIC EQUALIZER - PREAMP", juce::dontSendNotification);
-    subtitleLabel.setFont (juce::Font (juce::FontOptions (11.0f, juce::Font::bold)));
-    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (0xff999b9d));
+    subtitleLabel.setText ("FOUR BAND PARAMETRIC EQUALIZER / PREAMPLIFIER", juce::dontSendNotification);
+    subtitleLabel.setFont (juce::Font (juce::FontOptions (13.0f, juce::Font::bold)));
+    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (0xffc0b9a9));
     addAndMakeVisible (subtitleLabel);
 
     for (int i = 0; i < 4; ++i)
     {
-        lookAndFeel.setKnobColour (getBandColour (i));
+        bandLookAndFeels[(size_t)i].setKnobColour (getBandColour (i));
         for (int j = 0; j < 3; ++j)
         {
             auto& slider = knobs[(size_t)i][(size_t)j];
             slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-            slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 82, 20);
-            if (j == 0)
-            {
-                slider.textFromValueFunction = [this, i](double v)
-                {
-                    const bool x10 = processor.parameters.getRawParameterValue (parameterId (i, "x10"))->load() >= 0.5f;
-                    return juce::String (v * (x10 ? 10.0 : 1.0), 0) + " Hz";
-                };
-            }
-            else if (j == 1) slider.setTextValueSuffix (" oct");
-            else slider.setTextValueSuffix (" dB");
+            slider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+            slider.setPopupDisplayEnabled (true, false, this);
             slider.setColour (juce::Slider::textBoxTextColourId, juce::Colour (0xffe5e2db));
-            slider.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff17191b));
-            slider.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff34383b));
-            slider.setLookAndFeel (&lookAndFeel);
+            slider.setLookAndFeel (&bandLookAndFeels[(size_t)i]);
             addAndMakeVisible (slider);
+
             auto& label = knobLabels[(size_t)i][(size_t)j];
             label.setText (controlNames[(size_t)j], juce::dontSendNotification);
             label.setJustificationType (juce::Justification::centred);
-            label.setFont (juce::Font (juce::FontOptions (9.5f, juce::Font::bold)));
-            label.setColour (juce::Label::textColourId, juce::Colour (0xffb8b8b4));
+            label.setFont (juce::Font (juce::FontOptions (13.0f, juce::Font::bold)));
+            label.setColour (juce::Label::textColourId, juce::Colour (0xffd0c8b8));
             addAndMakeVisible (label);
         }
+
         sliderAttachments[(size_t)i][0] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processor.parameters, parameterId (i, "freq"), knobs[(size_t)i][0]);
         sliderAttachments[(size_t)i][1] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processor.parameters, parameterId (i, "width"), knobs[(size_t)i][1]);
         sliderAttachments[(size_t)i][2] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processor.parameters, parameterId (i, "gain"), knobs[(size_t)i][2]);
 
-        multiplierButtons[(size_t)i].setButtonText ("FREQ ×10");
+        multiplierButtons[(size_t)i].setButtonText ("×10");
         multiplierButtons[(size_t)i].setClickingTogglesState (true);
-        multiplierButtons[(size_t)i].setColour (juce::ToggleButton::textColourId, juce::Colour (0xffd9d7d0));
+        multiplierButtons[(size_t)i].setColour (juce::ToggleButton::textColourId, juce::Colour (0xffe6dfd0));
         addAndMakeVisible (multiplierButtons[(size_t)i]);
         multiplierAttachments[(size_t)i] = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processor.parameters, parameterId (i, "x10"), multiplierButtons[(size_t)i]);
 
-        bandBypassButtons[(size_t)i].setButtonText ("BAND BYPASS");
+        bandBypassButtons[(size_t)i].setButtonText ("BYPASS");
         bandBypassButtons[(size_t)i].setClickingTogglesState (true);
-        bandBypassButtons[(size_t)i].setToggleState (true, juce::dontSendNotification);
-        bandBypassButtons[(size_t)i].setColour (juce::ToggleButton::textColourId, juce::Colour (0xffd9d7d0));
+        bandBypassButtons[(size_t)i].setColour (juce::ToggleButton::textColourId, juce::Colour (0xffe6dfd0));
         addAndMakeVisible (bandBypassButtons[(size_t)i]);
         bypassAttachments[(size_t)i] = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processor.parameters, parameterId (i, "bypass"), bandBypassButtons[(size_t)i]);
     }
 
     masterSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-    masterSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 82, 20);
-    masterSlider.setTextValueSuffix (" dB");
-    masterSlider.setColour (juce::Slider::textBoxTextColourId, juce::Colour (0xffe5e2db));
-    masterSlider.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff17191b));
-    masterSlider.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff34383b));
-    lookAndFeel.setKnobColour (juce::Colour (0xff3996d8));
-    masterSlider.setLookAndFeel (&lookAndFeel);
+    masterSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    masterSlider.setPopupDisplayEnabled (true, false, this);
+    masterLookAndFeel.setKnobColour (juce::Colour (0xff1674b8));
+    masterSlider.setLookAndFeel (&masterLookAndFeel);
     addAndMakeVisible (masterSlider);
     masterAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processor.parameters, "master", masterSlider);
     masterLabel.setText ("MASTER LEVEL", juce::dontSendNotification);
     masterLabel.setJustificationType (juce::Justification::centred);
-    masterLabel.setFont (juce::Font (juce::FontOptions (10.0f, juce::Font::bold)));
-    masterLabel.setColour (juce::Label::textColourId, juce::Colour (0xffc8c8c3));
+    masterLabel.setFont (juce::Font (juce::FontOptions (17.0f, juce::Font::bold)));
+    masterLabel.setColour (juce::Label::textColourId, juce::Colour (0xffd0c8b8));
     addAndMakeVisible (masterLabel);
 
     eqBypassButton.setButtonText ("EQ BYPASS");
     eqBypassButton.setClickingTogglesState (true);
-    eqBypassButton.setColour (juce::ToggleButton::textColourId, juce::Colour (0xffe6e3dc));
+    eqBypassButton.setColour (juce::ToggleButton::textColourId, juce::Colour (0xffe6dfd0));
     addAndMakeVisible (eqBypassButton);
     eqBypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processor.parameters, "eq_bypass", eqBypassButton);
 
-    powerLabel.setText ("●  POWER", juce::dontSendNotification);
-    powerLabel.setFont (juce::Font (juce::FontOptions (10.0f, juce::Font::bold)));
-    powerLabel.setColour (juce::Label::textColourId, juce::Colour (0xff73c879));
+    powerLabel.setText ("POWER", juce::dontSendNotification);
+    powerLabel.setFont (juce::Font (juce::FontOptions (13.0f, juce::Font::bold)));
+    powerLabel.setColour (juce::Label::textColourId, juce::Colour (0xffd0c8b8));
+    powerLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (powerLabel);
-    overloadLabel.setText ("●  OVERLOAD", juce::dontSendNotification);
-    overloadLabel.setFont (juce::Font (juce::FontOptions (10.0f, juce::Font::bold)));
-    overloadLabel.setColour (juce::Label::textColourId, juce::Colour (0xff777777));
+    overloadLabel.setText ("OVERLOAD", juce::dontSendNotification);
+    overloadLabel.setFont (juce::Font (juce::FontOptions (13.0f, juce::Font::bold)));
+    overloadLabel.setColour (juce::Label::textColourId, juce::Colour (0xffd0c8b8));
+    overloadLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (overloadLabel);
     startTimerHz (15);
 }
@@ -127,55 +119,47 @@ void AudioArts4100AudioProcessorEditor::RackLookAndFeel::drawRotarySlider (juce:
     float sliderPos, float startAngle, float endAngle, juce::Slider& slider)
 {
     juce::ignoreUnused (slider);
-    const float diameter = (float) juce::jmin (width - 18, height - 27);
+    const float diameter = (float)juce::jmin (width - 24, height - 28);
     const float cx = (float)x + (float)width * 0.5f;
-    const float cy = (float)y + diameter * 0.5f + 3.0f;
+    const float cy = (float)y + (float)height * 0.48f;
     const float r = diameter * 0.5f;
     const float angle = startAngle + sliderPos * (endAngle - startAngle);
 
-    // Outer machined bezel and recessed shadow.
-    g.setColour (juce::Colour (0xff08090a));
-    g.fillEllipse (cx - r - 4.0f, cy - r - 2.0f, (r + 4.0f) * 2.0f, (r + 4.0f) * 2.0f);
-    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff777b7d), cx - r, cy - r,
-                                             juce::Colour (0xff202326), cx + r, cy + r, false));
+    g.setColour (juce::Colours::black.withAlpha (0.8f));
+    g.fillEllipse (cx - r - 5.0f, cy - r - 3.0f, (r + 5.0f) * 2.0f, (r + 5.0f) * 2.0f);
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xffaaa69b), cx - r, cy - r,
+                                             juce::Colour (0xff252729), cx + r, cy + r, false));
     g.fillEllipse (cx - r, cy - r, r * 2.0f, r * 2.0f);
-    g.setColour (juce::Colour (0xff111315));
-    g.fillEllipse (cx - r + 3.0f, cy - r + 3.0f, (r - 3.0f) * 2.0f, (r - 3.0f) * 2.0f);
+    g.setColour (juce::Colour (0xff080a0b));
+    g.fillEllipse (cx - r + 4.0f, cy - r + 4.0f, (r - 4.0f) * 2.0f, (r - 4.0f) * 2.0f);
 
-    // Calibrated scale ticks.
-    const float tickR1 = r + 7.0f, tickR2 = r + 12.0f;
     for (int i = 0; i <= 20; ++i)
     {
         const float a = startAngle + (endAngle - startAngle) * (float)i / 20.0f;
         const bool major = (i % 5 == 0);
-        juce::Point<float> p1 (cx + std::cos (a) * (major ? tickR1 - 2.0f : tickR1), cy + std::sin (a) * (major ? tickR1 - 2.0f : tickR1));
-        juce::Point<float> p2 (cx + std::cos (a) * tickR2, cy + std::sin (a) * tickR2);
-        g.setColour (major ? juce::Colour (0xffd2d0c9) : juce::Colour (0xff73777a));
-        g.drawLine ({ p1, p2 }, major ? 1.5f : 1.0f);
+        const float r1 = r + (major ? 7.0f : 9.0f);
+        const float r2 = r + 17.0f;
+        g.setColour (major ? juce::Colour (0xffe3ded2) : juce::Colour (0xff77736b));
+        g.drawLine (cx + std::cos (a) * r1, cy + std::sin (a) * r1,
+                    cx + std::cos (a) * r2, cy + std::sin (a) * r2, major ? 2.0f : 1.2f);
     }
 
-    // Moulded plastic cap, with a subtle highlight and lower-edge shading.
     auto cap = knobColour;
-    g.setGradientFill (juce::ColourGradient (cap.brighter (0.42f), cx - r * 0.55f, cy - r * 0.65f,
-                                             cap.darker (0.48f), cx + r * 0.65f, cy + r * 0.75f, false));
+    g.setGradientFill (juce::ColourGradient (cap.brighter (0.48f), cx - r * 0.6f, cy - r * 0.7f,
+                                             cap.darker (0.52f), cx + r * 0.65f, cy + r * 0.72f, false));
     g.fillEllipse (cx - r * 0.78f, cy - r * 0.78f, r * 1.56f, r * 1.56f);
-    g.setColour (cap.darker (0.65f));
+    g.setColour (cap.darker (0.7f));
     g.drawEllipse (cx - r * 0.78f, cy - r * 0.78f, r * 1.56f, r * 1.56f, 2.0f);
-    g.setColour (juce::Colours::white.withAlpha (0.16f));
-    juce::Path highlightArc;
-    highlightArc.addArc (cx - r * 0.69f, cy - r * 0.69f, r * 1.38f, r * 1.38f,
-                         3.7f, 5.25f, true);
-    g.strokePath (highlightArc, juce::PathStrokeType (2.0f));
+    g.setColour (juce::Colours::white.withAlpha (0.2f));
+    juce::Path gloss;
+    gloss.addArc (cx - r * 0.68f, cy - r * 0.68f, r * 1.36f, r * 1.36f, 3.65f, 5.15f, true);
+    g.strokePath (gloss, juce::PathStrokeType (2.0f));
 
-    // Pointer inset into the plastic, plus a small centre boss.
-    const float pointerLength = r * 0.56f;
-    juce::Point<float> pointerEnd (cx + std::sin (angle) * pointerLength, cy - std::cos (angle) * pointerLength);
-    g.setColour (juce::Colour (0xff17191b));
-    g.drawLine (cx, cy, pointerEnd.x, pointerEnd.y, 5.0f);
-    g.setColour (juce::Colour (0xfff1eee5));
-    g.drawLine (cx, cy, pointerEnd.x, pointerEnd.y, 1.5f);
-    g.setColour (cap.brighter (0.15f));
-    g.fillEllipse (cx - 4.0f, cy - 4.0f, 8.0f, 8.0f);
+    const juce::Point<float> tip (cx + std::sin (angle) * r * 0.57f, cy - std::cos (angle) * r * 0.57f);
+    g.setColour (juce::Colour (0xff151515));
+    g.drawLine (cx + 1.0f, cy + 1.0f, tip.x + 1.0f, tip.y + 1.0f, 6.0f);
+    g.setColour (juce::Colour (0xfff2eee4));
+    g.drawLine (cx, cy, tip.x, tip.y, 2.0f);
 }
 
 void AudioArts4100AudioProcessorEditor::RackLookAndFeel::drawToggleButton (juce::Graphics& g,
@@ -183,87 +167,145 @@ void AudioArts4100AudioProcessorEditor::RackLookAndFeel::drawToggleButton (juce:
 {
     auto r = button.getLocalBounds().toFloat().reduced (1.0f);
     const bool on = button.getToggleState();
-    g.setColour (juce::Colour (0xff08090a));
-    g.fillRoundedRectangle (r.translated (0.0f, 1.5f), 4.0f);
-    g.setGradientFill (juce::ColourGradient (on ? juce::Colour (0xff555b5e) : juce::Colour (0xff34383b),
-        r.getX(), r.getY(), juce::Colour (0xff171a1c), r.getX(), r.getBottom(), false));
-    g.fillRoundedRectangle (r, 4.0f);
-    g.setColour (on ? juce::Colour (0xff8bc98b) : juce::Colour (0xff55595b));
-    g.fillEllipse (r.getX() + 7.0f, r.getCentreY() - 3.0f, 6.0f, 6.0f);
-    g.setColour (button.findColour (juce::ToggleButton::textColourId).withAlpha (highlighted || down ? 1.0f : 0.88f));
-    g.setFont (juce::Font (juce::FontOptions (9.0f, juce::Font::bold)));
-    g.drawFittedText (button.getButtonText(), button.getLocalBounds().withTrimmedLeft (17), juce::Justification::centred, 1);
+    const bool isMultiplier = button.getButtonText() == "×10";
+    g.setColour (juce::Colours::black.withAlpha (0.85f));
+    g.fillRoundedRectangle (r.translated (0.0f, 2.0f), isMultiplier ? 12.0f : 5.0f);
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff77736b), r.getX(), r.getY(),
+                                             juce::Colour (0xff17191a), r.getRight(), r.getBottom(), false));
+    g.fillRoundedRectangle (r, isMultiplier ? 12.0f : 5.0f);
+    g.setColour (juce::Colour (0xff0a0b0c));
+    g.drawRoundedRectangle (r, isMultiplier ? 12.0f : 5.0f, 1.0f);
+
+    if (isMultiplier)
+    {
+        const float cx = r.getCentreX();
+        const float travel = juce::jmax (5.0f, r.getHeight() * 0.22f);
+        const float cy = r.getCentreY() + (on ? travel : -travel);
+        g.setGradientFill (juce::ColourGradient (juce::Colour (0xffd7d1c3), cx - 5.0f, cy - 10.0f,
+                                                 juce::Colour (0xff514d45), cx + 5.0f, cy + 10.0f, false));
+        g.fillRoundedRectangle (cx - 7.0f, cy - 13.0f, 14.0f, 26.0f, 6.0f);
+        g.setColour (juce::Colour (0xffe0d8c8));
+        g.setFont (juce::Font (juce::FontOptions (11.0f, juce::Font::bold)));
+        g.drawText ("×10", button.getLocalBounds().withY (button.getHeight() - 19), juce::Justification::centred);
+    }
+    else
+    {
+        g.setColour (on ? juce::Colour (0xffb5f5a0) : juce::Colour (0xff4b514a));
+        g.fillRoundedRectangle (r.getX() + 8.0f, r.getY() + 5.0f, 13.0f, r.getHeight() - 10.0f, 3.0f);
+        g.setColour (juce::Colour (0xff0b0c0d));
+        g.drawRoundedRectangle (r.getX() + 6.0f, r.getY() + 3.0f, 17.0f, r.getHeight() - 6.0f, 3.0f, 1.0f);
+        g.setColour (button.findColour (juce::ToggleButton::textColourId).withAlpha (highlighted || down ? 1.0f : 0.92f));
+        g.setFont (juce::Font (juce::FontOptions (12.0f, juce::Font::bold)));
+        g.drawFittedText (button.getButtonText(), button.getLocalBounds().withTrimmedLeft (26), juce::Justification::centred, 1);
+    }
 }
 
 void AudioArts4100AudioProcessorEditor::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff080a0c), 0.0f, 0.0f,
-                                             juce::Colour (0xff171a1d), 0.0f, bounds.getBottom(), false));
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff080909), 0.0f, 0.0f,
+                                             juce::Colour (0xff242321), 0.0f, bounds.getBottom(), false));
     g.fillAll();
-    auto panel = bounds.reduced (12.0f);
-    g.setColour (juce::Colour (0xff050607));
-    g.fillRoundedRectangle (panel, 8.0f);
-    g.setColour (juce::Colour (0xff41464a));
-    g.drawRoundedRectangle (panel, 8.0f, 1.0f);
-    // Brushed-metal horizontal hairlines, kept very subtle against the near-black panel.
-    g.setColour (juce::Colours::white.withAlpha (0.018f));
-    for (int y = 16; y < getHeight() - 14; y += 4) g.drawHorizontalLine (y, 14.0f, (float)getWidth() - 14.0f);
+    auto panel = bounds.reduced (8.0f);
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff292927), 0.0f, 0.0f,
+                                             juce::Colour (0xff111313), 0.0f, bounds.getBottom(), false));
+    g.fillRoundedRectangle (panel, 7.0f);
+    g.setColour (juce::Colour (0xff77736a)); g.drawRoundedRectangle (panel, 7.0f, 1.2f);
 
-    // Four and only four rack screws, one in each corner.
-    for (auto pt : { juce::Point<float> (25.0f, 25.0f), juce::Point<float> ((float)getWidth() - 25.0f, 25.0f),
-                     juce::Point<float> (25.0f, (float)getHeight() - 25.0f), juce::Point<float> ((float)getWidth() - 25.0f, (float)getHeight() - 25.0f) })
+    // Subtle brushed-metal grain.
+    g.setColour (juce::Colours::white.withAlpha (0.018f));
+    for (int y = 12; y < getHeight() - 10; y += 5) g.drawHorizontalLine (y, 12.0f, (float)getWidth() - 12.0f);
+
+    // Four rack screws, one in each corner.
+    for (auto pt : { juce::Point<float> (35.0f, 34.0f), juce::Point<float> ((float)getWidth() - 35.0f, 34.0f),
+                     juce::Point<float> (35.0f, (float)getHeight() - 34.0f), juce::Point<float> ((float)getWidth() - 35.0f, (float)getHeight() - 34.0f) })
     {
-        g.setColour (juce::Colour (0xff050607)); g.fillEllipse (pt.x - 7.0f, pt.y - 7.0f, 14.0f, 14.0f);
-        g.setColour (juce::Colour (0xff74797c)); g.drawEllipse (pt.x - 6.0f, pt.y - 6.0f, 12.0f, 12.0f, 1.0f);
-        g.setColour (juce::Colour (0xff8d9294)); g.drawLine (pt.x - 3.0f, pt.y + 3.0f, pt.x + 3.0f, pt.y - 3.0f, 1.2f);
+        g.setColour (juce::Colours::black); g.fillEllipse (pt.x - 14.0f, pt.y - 14.0f, 28.0f, 28.0f);
+        g.setGradientFill (juce::ColourGradient (juce::Colour (0xffb9b4a9), pt.x - 9.0f, pt.y - 10.0f,
+                                                 juce::Colour (0xff343638), pt.x + 10.0f, pt.y + 10.0f, false));
+        g.fillEllipse (pt.x - 11.0f, pt.y - 11.0f, 22.0f, 22.0f);
+        g.setColour (juce::Colour (0xff17191a));
+        g.drawLine (pt.x - 5.0f, pt.y - 4.0f, pt.x + 5.0f, pt.y + 4.0f, 2.5f);
+        g.drawLine (pt.x - 5.0f, pt.y + 4.0f, pt.x + 5.0f, pt.y - 4.0f, 2.5f);
     }
 
+    g.setColour (juce::Colour (0xff8c877c));
+    g.drawHorizontalLine (77, 28.0f, (float)getWidth() - 28.0f);
+    g.drawHorizontalLine (624, 28.0f, (float)getWidth() - 28.0f);
+
+    const std::array<juce::Rectangle<float>, 4> areas {
+        juce::Rectangle<float> (30, 94, 560, 250), juce::Rectangle<float> (610, 94, 560, 250),
+        juce::Rectangle<float> (30, 360, 560, 250), juce::Rectangle<float> (610, 360, 560, 250)
+    };
     for (int i = 0; i < 4; ++i)
     {
-        auto area = (i == 0 ? juce::Rectangle<float> (28, 94, 452, 224) : i == 1 ? juce::Rectangle<float> (500, 94, 452, 224)
-                    : i == 2 ? juce::Rectangle<float> (28, 330, 452, 224) : juce::Rectangle<float> (500, 330, 452, 224));
-        g.setColour (juce::Colour (0xff111416)); g.fillRoundedRectangle (area, 5.0f);
-        g.setColour (juce::Colour (0xff41474b)); g.drawRoundedRectangle (area, 5.0f, 1.0f);
-        g.setColour (getBandColour (i)); g.fillRoundedRectangle (area.getX() + 1.0f, area.getY() + 1.0f, 5.0f, area.getHeight() - 2.0f, 2.0f);
-        g.setColour (getBandColour (i).brighter (0.15f));
+        auto a = areas[(size_t)i];
+        g.setColour (juce::Colour (0xff111313)); g.fillRoundedRectangle (a, 8.0f);
+        g.setColour (juce::Colour (0xff898477)); g.drawRoundedRectangle (a, 8.0f, 1.0f);
+        g.setColour (getBandColour (i)); g.fillRoundedRectangle (a.getX() + 1.0f, a.getY() + 1.0f, a.getWidth() - 2.0f, 42.0f, 7.0f);
+        g.setColour (juce::Colours::black.withAlpha (0.42f));
+        g.fillRect (a.getX() + 1.0f, a.getY() + 36.0f, a.getWidth() - 2.0f, 7.0f);
+        g.setColour (juce::Colours::white.withAlpha (0.14f));
+        g.drawHorizontalLine ((int)a.getY() + 44, a.getX() + 4.0f, a.getRight() - 4.0f);
+
+        // Calibrated scale legends around the three controls.
+        g.setColour (juce::Colour (0xffcfc8b9));
         g.setFont (juce::Font (juce::FontOptions (12.0f, juce::Font::bold)));
-        g.drawText (bandNames[(size_t)i], area.toNearestInt().withTrimmedLeft (16).withHeight (22).translated (0, 5), juce::Justification::centredLeft);
-        g.setColour (juce::Colour (0xff44494c));
-        g.drawHorizontalLine ((int)area.getY() + 32, area.getX() + 14.0f, area.getRight() - 12.0f);
+        const float y = a.getY() + 83.0f;
+        g.drawText (i < 2 ? "22       50       100       300" : (i == 2 ? "100       200       500       1k" : "180       500       1k       2.1k"),
+                    juce::Rectangle<int> ((int)a.getX() + 22, (int)y, 195, 20), juce::Justification::centred);
+        g.drawText ("×1     0.6        1        2", juce::Rectangle<int> ((int)a.getX() + 245, (int)y, 150, 20), juce::Justification::centred);
+        g.drawText ("-16                 0                 +16", juce::Rectangle<int> ((int)a.getX() + 392, (int)y, 155, 20), juce::Justification::centred);
     }
-    g.setColour (juce::Colour (0xff41474b));
-    g.drawHorizontalLine (566, 28.0f, (float)getWidth() - 28.0f);
+
+    // Footer legend and status lamps.
+    auto led = [&g] (float x, float y, juce::Colour c)
+    {
+        g.setColour (c.darker (0.8f)); g.fillEllipse (x - 12.0f, y - 12.0f, 24.0f, 24.0f);
+        g.setColour (c); g.fillEllipse (x - 8.0f, y - 8.0f, 16.0f, 16.0f);
+        g.setColour (juce::Colours::white.withAlpha (0.45f)); g.fillEllipse (x - 4.0f, y - 5.0f, 6.0f, 5.0f);
+    };
+    led (122.0f, 710.0f, juce::Colour (0xffed3430));
+    led (1080.0f, 710.0f, processor.getOutputPeak() >= 0.98f ? juce::Colour (0xffff3025) : juce::Colour (0xff6c302b));
+    g.setColour (juce::Colour (0xffbdb6a8));
+    g.setFont (juce::Font (juce::FontOptions (11.0f, juce::Font::bold)));
+    g.drawText ("-∞", 500, 757, 35, 18, juce::Justification::centred);
+    g.drawText ("+16", 665, 757, 35, 18, juce::Justification::centred);
 }
 
 void AudioArts4100AudioProcessorEditor::resized()
 {
-    titleLabel.setBounds (48, 28, 270, 34);
-    subtitleLabel.setBounds (325, 37, 550, 20);
-    const std::array<juce::Point<int>, 4> origins { juce::Point<int> (42, 137), {514, 137}, {42, 373}, {514, 373} };
+    titleLabel.setBounds (75, 20, 450, 45);
+    subtitleLabel.setBounds (610, 34, 530, 25);
+
+    const std::array<juce::Point<int>, 4> origins {
+        juce::Point<int> (30, 94), { 610, 94 }, { 30, 360 }, { 610, 360 }
+    };
     for (int i = 0; i < 4; ++i)
     {
-        const auto origin = origins[(size_t)i];
+        const auto o = origins[(size_t)i];
+        // Frequency, bandwidth and gain knobs; the multiplier sits between frequency and bandwidth.
+        const std::array<int, 3> knobX { o.x + 34, o.x + 242, o.x + 414 };
+        const std::array<int, 3> knobW { 150, 150, 125 };
         for (int j = 0; j < 3; ++j)
         {
-            const int x = origin.x + 15 + j * 139;
-            knobLabels[(size_t)i][(size_t)j].setBounds (x, origin.y - 3, 126, 16);
-            knobs[(size_t)i][(size_t)j].setBounds (x + 8, origin.y + 12, 110, 137);
+            knobs[(size_t)i][(size_t)j].setBounds (knobX[(size_t)j], o.y + 68, knobW[(size_t)j], 145);
+            knobLabels[(size_t)i][(size_t)j].setBounds (knobX[(size_t)j] - 4, o.y + 207, knobW[(size_t)j] + 8, 24);
         }
-        multiplierButtons[(size_t)i].setBounds (origin.x + 26, origin.y + 158, 112, 23);
-        bandBypassButtons[(size_t)i].setBounds (origin.x + 274, origin.y + 158, 112, 23);
+        multiplierButtons[(size_t)i].setBounds (o.x + 190, o.y + 117, 48, 86);
+        bandBypassButtons[(size_t)i].setBounds (o.x + 455, o.y + 8, 94, 27);
     }
-    masterSlider.setBounds (410, 563, 150, 83);
-    masterLabel.setBounds (410, 553, 150, 15);
-    eqBypassButton.setBounds (585, 592, 125, 25);
-    powerLabel.setBounds (740, 592, 90, 24);
-    overloadLabel.setBounds (835, 592, 110, 24);
+
+    masterSlider.setBounds (510, 640, 155, 120);
+    masterLabel.setBounds (680, 675, 210, 42);
+    eqBypassButton.setBounds (225, 690, 130, 38);
+    powerLabel.setBounds (75, 735, 95, 25);
+    overloadLabel.setBounds (1015, 735, 130, 25);
 }
 
 void AudioArts4100AudioProcessorEditor::timerCallback()
 {
-    for (int i = 0; i < 4; ++i)
-        knobs[(size_t)i][0].setValue (knobs[(size_t)i][0].getValue(), juce::dontSendNotification);
     const bool hot = processor.getOutputPeak() >= 0.98f;
-    overloadLabel.setColour (juce::Label::textColourId, hot ? juce::Colour (0xffff5148) : juce::Colour (0xff777777));
+    overloadLabel.setColour (juce::Label::textColourId, hot ? juce::Colour (0xffff5148) : juce::Colour (0xffd0c8b8));
+    repaint (1000, 680, 100, 70);
 }

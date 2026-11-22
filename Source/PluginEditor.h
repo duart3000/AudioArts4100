@@ -24,6 +24,8 @@ private:
 
     AudioArts4100AudioProcessor& processor;
     RackLookAndFeel lookAndFeel;
+    std::array<RackLookAndFeel, 4> bandLookAndFeels;
+    RackLookAndFeel masterLookAndFeel;
     std::array<std::array<juce::Slider, 3>, 4> knobs;
     std::array<std::array<juce::Label, 3>, 4> knobLabels;
     std::array<juce::ToggleButton, 4> multiplierButtons;
