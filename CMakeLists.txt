@@ -28,6 +28,8 @@ juce_add_plugin(AudioArts4100
     VST3_CATEGORIES Fx EQ)
 
 juce_generate_juce_header(AudioArts4100)
+juce_add_binary_data(AudioArts4100Assets
+    SOURCES Source/Assets/PanelBackground.png)
 target_sources(AudioArts4100 PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
@@ -39,6 +41,7 @@ target_compile_definitions(AudioArts4100 PUBLIC
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0)
 target_link_libraries(AudioArts4100 PRIVATE
+    AudioArts4100Assets
     juce::juce_audio_utils
     juce::juce_dsp
     PUBLIC juce::juce_recommended_config_flags
